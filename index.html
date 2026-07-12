@@ -246,10 +246,11 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
+    <script>
+        // 1. Inisialisasi Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDURjNxBuaC5xMd7Py5pTOG8LmQawLnQIs",
             authDomain: "edukids-my.firebaseapp.com",
@@ -260,28 +261,28 @@
             appId: "1:684848089074:web:5bb13ac77a2f9fd8b88d6b"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // Semak dan mulakan aplikasi Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
 
-        // Fungsi Global untuk Log Aktiviti Kanak-kanak ke Firebase Database
+        // Fungsi merekod aktiviti kanak-kanak
         window.logActivity = function(moduleName) {
             try {
-                const activityRef = ref(db, 'activity_logs');
-                const newLogRef = push(activityRef);
-                set(newLogRef, {
+                const activityRef = db.ref('activity_logs');
+                const newLogRef = activityRef.push();
+                newLogRef.set({
                     module_clicked: moduleName,
                     timestamp: new Date().toISOString()
                 });
-                console.log("Firebase Logged:", moduleName);
+                console.log("Aktiviti berjaya direkod di Firebase:", moduleName);
             } catch (error) {
-                console.error("Firebase Error:", error);
+                console.error("Ralat Firebase:", error);
             }
         };
-    </script>
 
-    <script>
-        // Data Bahasa
+        // 2. Data Aplikasi (Teks & Kandungan Pembelajaran)
         const langData = {
             bm: {
                 welcome: "Mari Belajar! 🚀",
@@ -305,9 +306,8 @@
 
         let currentLang = 'bm';
 
-        // Data Modul
         const moduleData = {
-            'abc': ['A','B','C','D','E','F','G','H','I','J'], // Dipendekkan untuk contoh
+            'abc': ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'], 
             '123': ['1','2','3','4','5','6','7','8','9','10'],
             'colors': [
                 { val: '🔴', bm: 'Merah', en: 'Red' },
@@ -323,7 +323,7 @@
             ]
         };
 
-        // Fungsi Tukar Bahasa
+        // 3. Kawalan Antaramuka (UI) dan Fungsi
         document.getElementById('langToggle').addEventListener('click', () => {
             currentLang = currentLang === 'bm' ? 'en' : 'bm';
             updateUI();
@@ -338,9 +338,9 @@
             document.getElementById('back-text').innerText = langData[currentLang].back;
         }
 
-        // Fungsi Buka Modul
-        function openModule(moduleName) {
-            // Rekod di Firebase
+        // Fungsi Buka Modul (Memaparkan kandungan di dalam butang yang ditekan)
+        window.openModule = function(moduleName) {
+            // Rekod klik modul ke pangkalan data Firebase
             if(window.logActivity) window.logActivity(moduleName);
 
             document.getElementById('home-view').style.display = 'none';
@@ -348,9 +348,10 @@
             document.getElementById('module-title').innerText = langData[currentLang][moduleName];
             
             const container = document.getElementById('items-container');
-            container.innerHTML = ''; // Bersihkan container
+            container.innerHTML = ''; // Kosongkan paparan sebelum ini
 
             const items = moduleData[moduleName];
+            
             items.forEach(item => {
                 let btn = document.createElement('button');
                 btn.className = 'item-btn';
@@ -364,38 +365,38 @@
                     textToSpeak = item;
                 }
 
-                // Tambah acara klik untuk animasi dan bunyi
+                // Tambah kesan klik (animasi pop & suara)
                 btn.onclick = function() {
                     // Animasi Pop
                     this.classList.remove('pop-anim');
-                    void this.offsetWidth; // Trigger reflow
+                    void this.offsetWidth; // Set semula animasi
                     this.classList.add('pop-anim');
 
-                    // Teks-ke-Suara (Text-to-Speech API)
+                    // API Suara (Sebut perkataan)
                     speak(textToSpeak);
                 };
                 container.appendChild(btn);
             });
-        }
+        };
 
-        // Fungsi Kembali ke Laman Utama
-        function goBack() {
+        // Fungsi kembali ke paparan utama
+        window.goBack = function() {
             document.getElementById('module-view').style.display = 'none';
             document.getElementById('home-view').style.display = 'block';
-        }
+        };
 
-        // Fungsi Sebut Perkataan menggunakan Web Speech API
+        // Fungsi Teks-ke-Suara (Bunyi audio)
         function speak(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = langData[currentLang].speechCode;
-                utterance.rate = 0.8; // Sebut perlahan sedikit untuk kanak-kanak
-                utterance.pitch = 1.2; // Suara sedikit tinggi dan ceria
+                utterance.rate = 0.8; // Perlahankan sikit untuk kanak-kanak
+                utterance.pitch = 1.2; // Suara yang lebih riang
                 window.speechSynthesis.speak(utterance);
             }
         }
 
-        // Mulakan UI dengan BM
+        // Jalankan pertukaran UI ketika aplikasi mula dimuat
         updateUI();
     </script>
 </body>
